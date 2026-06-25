@@ -419,9 +419,9 @@ export class DashboardService {
     if (!database) return getMockFlexImpressions();
 
     try {
-      // 1. Fetch Flex_Impression data from Supabase
+      // 1. Fetch flex_impressions data from Supabase
       const { data: impressions, error: impError } = await database
-        .from('Flex_Impression')
+        .from('flex_impressions')
         .select('*')
         .order('created_at', { ascending: false });
 

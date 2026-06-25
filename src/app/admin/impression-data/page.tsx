@@ -23,9 +23,15 @@ export default function ImpressionDataPage() {
   // Filter States
   const [search, setSearch] = useState('');
   const [occupationFilter, setOccupationFilter] = useState('All');
+  const [campaignFilter, setCampaignFilter] = useState('All');
   
   // Sort State
   const [sortAsc, setSortAsc] = useState(false);
+
+  // Get unique campaigns list
+  const uniqueCampaignsList = Array.from(
+    new Set(impressions.map(imp => imp.campaign_name).filter(Boolean))
+  );
 
   // Load Impressions
   useEffect(() => {
@@ -57,7 +63,10 @@ export default function ImpressionDataPage() {
     // 2. Occupation filter
     const matchesOccupation = occupationFilter === 'All' || imp.occupation === occupationFilter;
 
-    return matchesSearch && matchesOccupation;
+    // 3. Campaign filter
+    const matchesCampaign = campaignFilter === 'All' || imp.campaign_name === campaignFilter;
+
+    return matchesSearch && matchesOccupation && matchesCampaign;
   });
 
   // Sorted Impressions
@@ -163,17 +172,31 @@ export default function ImpressionDataPage() {
           </div>
 
           {/* Occupation Filter */}
-          <div className="w-full md:w-64">
+          <div className="w-full md:w-56">
             <select
               value={occupationFilter}
               onChange={e => setOccupationFilter(e.target.value)}
-              className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:bg-white dark:border-zinc-800 dark:bg-zinc-950 dark:text-white transition-all"
+              className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:bg-white dark:border-zinc-800 dark:bg-zinc-950 dark:text-white transition-all cursor-pointer"
             >
               <option value="All">ทุกกลุ่มอาชีพ (All Occupations)</option>
               <option value="Doctor">แพทย์ (Doctor)</option>
               <option value="Nurse">พยาบาล (Nurse)</option>
               <option value="Pharmacist">เภสัชกร (Pharmacist)</option>
               <option value="Hospital/Clinic Officer">เจ้าหน้าที่ (Hospital/Clinic Officer)</option>
+            </select>
+          </div>
+
+          {/* Campaign Filter */}
+          <div className="w-full md:w-56">
+            <select
+              value={campaignFilter}
+              onChange={e => setCampaignFilter(e.target.value)}
+              className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:bg-white dark:border-zinc-800 dark:bg-zinc-950 dark:text-white transition-all cursor-pointer"
+            >
+              <option value="All">ทุกแคมเปญ (All Campaigns)</option>
+              {uniqueCampaignsList.map(camp => (
+                <option key={camp} value={camp}>{camp}</option>
+              ))}
             </select>
           </div>
 
@@ -227,7 +250,7 @@ export default function ImpressionDataPage() {
                   return (
                     <tr 
                       key={imp.id || idx}
-                      className="hover:bg-zinc-50/80 dark:hover:bg-zinc-850/50 transition-colors"
+                      className="hover:bg-zinc-50/80 dark:hover:bg-white/[0.08] transition-colors"
                     >
                       {/* Member Info Profile */}
                       <td className="px-6 py-4">
@@ -262,7 +285,7 @@ export default function ImpressionDataPage() {
 
                       {/* User ID */}
                       <td className="px-6 py-4">
-                        <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-mono text-zinc-600 dark:bg-zinc-850 dark:text-zinc-400">
+                        <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-mono text-zinc-600 dark:bg-white/5 dark:text-zinc-300 border dark:border-white/10">
                           {imp.user_id}
                         </code>
                       </td>
@@ -297,7 +320,7 @@ export default function ImpressionDataPage() {
 
                       {/* Content ID */}
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-700 dark:bg-zinc-850 dark:text-zinc-300">
+                        <span className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-700 dark:bg-white/5 dark:text-zinc-300 border dark:border-white/10">
                           {imp.content_id || 'N/A'}
                         </span>
                       </td>
