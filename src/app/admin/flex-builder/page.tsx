@@ -453,7 +453,7 @@ export default function FlexBuilderPage() {
           };
         case 'divider':
           return {
-            type: 'divider',
+            type: 'separator',
             color: c.color || '#e5e7eb',
             margin: 'md'
           };
