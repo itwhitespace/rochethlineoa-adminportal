@@ -15,10 +15,12 @@ import {
 } from 'lucide-react';
 import { DashboardService } from '@/lib/dashboardService';
 import { FlexImpression } from '@/lib/types';
+import { isDatabaseConfigured } from '@/lib/database';
 
 export default function ImpressionDataPage() {
   const [impressions, setImpressions] = useState<FlexImpression[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isLive, setIsLive] = useState(false);
   
   // Filter States
   const [search, setSearch] = useState('');
@@ -35,6 +37,7 @@ export default function ImpressionDataPage() {
 
   // Load Impressions
   useEffect(() => {
+    setIsLive(isDatabaseConfigured());
     async function loadData() {
       setLoading(true);
       try {
@@ -228,6 +231,27 @@ export default function ImpressionDataPage() {
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 max-w-sm">
               ไม่พบบันทึกการเปิดอ่านข้อความ Flex Message ที่มีคุณสมบัติสอดคล้องกับการค้นหาหรือเงื่อนไขตัวกรองของคุณ
             </p>
+            
+            {isLive && (
+              <div className="mt-6 max-w-md rounded-lg border border-amber-200/60 bg-amber-50/50 p-4 text-left text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-400 shadow-xs">
+                <p className="font-semibold flex items-center gap-1">
+                  💡 คำแนะนำสำหรับผู้พัฒนา (Supabase RLS Check):
+                </p>
+                <p className="mt-1 leading-relaxed">
+                  หากในฐานข้อมูล Supabase มีข้อมูลเก็บอยู่จริงในตาราง <code className="bg-amber-100/60 dark:bg-amber-900/50 px-1 rounded">flex_impressions</code> แต่หน้าจอแสดงเป็น 0 รายการ แสดงว่าถูกบล็อกด้วย <strong>Row Level Security (RLS)</strong> ของ Supabase (ระบบจะส่งค่ากลับเป็นลิสต์ว่างแบบสำเร็จแทนการแจ้งเตือน Error)
+                </p>
+                <p className="mt-2 font-semibold">วิธีแก้ไข:</p>
+                <p className="mt-1 leading-relaxed">
+                  กรุณาไปที่หน้า <strong>SQL Editor</strong> ในระบบจัดการ Supabase ของคุณ แล้วรันคำสั่งนี้เพื่อเปิดสิทธิ์การอ่านข้อมูล (SELECT):
+                </p>
+                <pre className="mt-2 rounded bg-white dark:bg-zinc-950 p-2 font-mono text-[10px] text-zinc-750 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 overflow-x-auto select-all">
+{`ALTER TABLE flex_impressions DISABLE ROW LEVEL SECURITY;
+
+-- หรือสร้าง Policy เพื่อเปิดให้ SELECT ได้อย่างเดียว
+CREATE POLICY "Allow public select" ON flex_impressions FOR SELECT USING (true);`}
+                </pre>
+              </div>
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto">
