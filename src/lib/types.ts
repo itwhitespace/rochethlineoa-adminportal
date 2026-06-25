@@ -65,3 +65,18 @@ export interface ContentLeaderboard {
   clicks: number;
   percentage: number;
 }
+
+export interface FlexImpression {
+  id: number | string;
+  user_id: string;
+  content_id: string;
+  campaign_name: string;
+  created_at: string;
+  // Joined fields from members table
+  display_name?: string | null;
+  picture_url?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  occupation?: string | null;
+  organization?: string | null;
+}

@@ -1,11 +1,12 @@
 import { getDatabaseClient, isDatabaseConfigured } from './database';
-import { DashboardStats, TargetTraffic, ContentLeaderboard, MemberAnalytics } from './types';
+import { DashboardStats, TargetTraffic, ContentLeaderboard, MemberAnalytics, FlexImpression } from './types';
 import { 
   getMockDashboardStats, 
   getMockTargetTraffic, 
   getMockContentLeaderboard, 
   getMockMembersList,
-  MOCK_LOGS
+  MOCK_LOGS,
+  getMockFlexImpressions
 } from './mockData';
 
 // Class to manage unified dashboard queries (Mock vs Database)
@@ -405,6 +406,56 @@ export class DashboardService {
     } catch (error) {
       console.error('Error fetching members list manually from Database:', error);
       return getMockMembersList(search, contentFilter, page, limit, statusFilter, occupationFilter, specialtyFilter);
+    }
+  }
+
+  // 6. Get Flex Impressions joined with member info
+  static async getFlexImpressions(): Promise<FlexImpression[]> {
+    if (!isDatabaseConfigured()) {
+      return getMockFlexImpressions();
+    }
+
+    const database = getDatabaseClient();
+    if (!database) return getMockFlexImpressions();
+
+    try {
+      // 1. Fetch Flex_Impression data from Supabase
+      const { data: impressions, error: impError } = await database
+        .from('Flex_Impression')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (impError) throw impError;
+      if (!impressions) return [];
+
+      // 2. Fetch all members to join client-side
+      const { data: members, error: memError } = await database
+        .from('members')
+        .select('user_id, display_name, picture_url, first_name, last_name, occupation, organization');
+
+      if (memError) throw memError;
+
+      // 3. Perform client-side join on user_id
+      const memberMap = new Map<string, any>();
+      if (members) {
+        members.forEach(m => memberMap.set(m.user_id, m));
+      }
+
+      return impressions.map(imp => {
+        const member = memberMap.get(imp.user_id) || {};
+        return {
+          ...imp,
+          display_name: member.display_name || null,
+          picture_url: member.picture_url || null,
+          first_name: member.first_name || null,
+          last_name: member.last_name || null,
+          occupation: member.occupation || null,
+          organization: member.organization || null
+        };
+      });
+    } catch (error) {
+      console.error('Error fetching Flex Impressions from database:', error);
+      return getMockFlexImpressions();
     }
   }
 }

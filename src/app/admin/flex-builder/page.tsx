@@ -90,11 +90,11 @@ const OCCUPATIONS = ['Doctor', 'Nurse', 'Pharmacist', 'Hospital/Clinic Officer']
 
 const createDefaultBubble = (id: string): FlexBubble => ({
   id,
-  headerTitle: '🔬 Roche Thailand',
-  headerSubtitle: 'ข้อมูลสุขภาพล่าสุดสำหรับบุคลากรทางการแพทย์',
+  headerTitle: '',
+  headerSubtitle: '',
   headerBgColor: '#0055FF',
-  heroUrl: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&auto=format&fit=crop',
-  heroActionUri: 'https://www.carewell.center/news',
+  heroUrl: '',
+  heroActionUri: '',
   bodyComponents: [
     {
       id: `${id}-txt-1`,
@@ -137,7 +137,7 @@ const createDefaultBubble = (id: string): FlexBubble => ({
       text: 'ลงทะเบียนเรียนออนไลน์',
       style: 'primary',
       color: '#0055FF',
-      actionUri: 'https://www.carewell.center/register'
+      actionUri: ''
     },
     {
       id: `${id}-divider-1`,
@@ -1208,7 +1208,7 @@ export default function FlexBuilderPage() {
                             <label className="block text-[10px] text-zinc-500 mb-1">ลิงก์ Action เมื่อคลิก (URL)</label>
                             <input
                               type="text"
-                              placeholder="เช่น https://www.carewell.center"
+                              placeholder="เช่น https://liff.line.me"
                               value={comp.actionUri || ''}
                               onChange={e => updateComponentProperty(comp!.id, 'actionUri', e.target.value, parentBox?.id)}
                               className="w-full text-xs rounded border border-zinc-200 p-2 outline-none dark:bg-zinc-955 dark:border-zinc-800 dark:text-white"
@@ -1262,7 +1262,7 @@ export default function FlexBuilderPage() {
                             <label className="block text-[10px] text-zinc-500 mb-1">ลิงก์ Action ปลายทาง (Target URL)</label>
                             <input
                               type="text"
-                              placeholder="เช่น www.carewell.center"
+                              placeholder="เช่น https://liff.line.me"
                               value={comp.actionUri || ''}
                               onChange={e => updateComponentProperty(comp!.id, 'actionUri', e.target.value, parentBox?.id)}
                               className="w-full text-xs rounded border border-zinc-200 p-2 outline-none dark:bg-zinc-955 dark:border-zinc-800 dark:text-white"

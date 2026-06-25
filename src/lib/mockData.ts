@@ -1,4 +1,4 @@
-import { Member, LiffLog, MemberAnalytics } from './types';
+import { Member, LiffLog, MemberAnalytics, FlexImpression } from './types';
 
 // Deterministic mock data for testing and local development
 export const MOCK_MEMBERS: Member[] = [
@@ -544,3 +544,74 @@ export function getMockMembersList(
     currentPage: page
   };
 }
+
+export const getMockFlexImpressions = (): FlexImpression[] => {
+  const mockImpressions = [
+    {
+      id: "imp_1",
+      user_id: "U111222333444",
+      content_id: "builder_content_1",
+      campaign_name: "flex_builder_camp",
+      created_at: new Date(Date.now() - 1.5 * 60 * 60 * 1000).toISOString() // 1.5 hours ago
+    },
+    {
+      id: "imp_2",
+      user_id: "U555666777888",
+      content_id: "builder_content_1",
+      campaign_name: "flex_builder_camp",
+      created_at: new Date(Date.now() - 2.5 * 60 * 60 * 1000).toISOString()
+    },
+    {
+      id: "imp_3",
+      user_id: "U999000111222",
+      content_id: "oncology_hcp_2026",
+      campaign_name: "Advanced_Oncology",
+      created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() // 1 day ago
+    },
+    {
+      id: "imp_4",
+      user_id: "U333444555666",
+      content_id: "oncology_hcp_2026",
+      campaign_name: "Advanced_Oncology",
+      created_at: new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString()
+    },
+    {
+      id: "imp_5",
+      user_id: "U777888999000",
+      content_id: "builder_content_1",
+      campaign_name: "flex_builder_camp",
+      created_at: new Date(Date.now() - 40 * 60 * 60 * 1000).toISOString()
+    },
+    {
+      id: "imp_6",
+      user_id: "U222333444555",
+      content_id: "cardio_update_02",
+      campaign_name: "Cardiology_Digest",
+      created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() // 3 days ago
+    },
+    {
+      id: "imp_7",
+      user_id: "U888999000111",
+      content_id: "cardio_update_02",
+      campaign_name: "Cardiology_Digest",
+      created_at: new Date(Date.now() - 3.5 * 24 * 60 * 60 * 1000).toISOString()
+    }
+  ];
+
+  // Join client-side with MOCK_MEMBERS
+  const memberMap = new Map<string, Member>();
+  MOCK_MEMBERS.forEach(m => memberMap.set(m.user_id, m));
+
+  return mockImpressions.map(imp => {
+    const member = memberMap.get(imp.user_id);
+    return {
+      ...imp,
+      display_name: member?.display_name || null,
+      picture_url: member?.picture_url || null,
+      first_name: member?.first_name || null,
+      last_name: member?.last_name || null,
+      occupation: member?.occupation || null,
+      organization: member?.organization || null
+    };
+  });
+};

@@ -387,7 +387,7 @@ export default function BroadcastPage() {
                   <input
                     id="ctaTarget"
                     type="text"
-                    placeholder="เช่น www.carewell.center"
+                    placeholder="เช่น https://liff.line.me"
                     value={form.ctaTarget}
                     onChange={e => handleChange('ctaTarget', e.target.value)}
                     className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
