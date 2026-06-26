@@ -142,7 +142,7 @@ export default function MembersPage() {
       
       setMembers(prev => prev.map(m => {
         if (m.user_id === actionModal.user!.user_id) {
-          return { ...m, ...editData };
+          return { ...m, ...editData } as MemberAnalytics;
         }
         return m;
       }));
