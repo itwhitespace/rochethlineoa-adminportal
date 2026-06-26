@@ -178,6 +178,15 @@ export default function MembersPage() {
     setActionModal({ isOpen: false, type: null, user: null });
   };
 
+  const isOccupationChecked = (value: string) => {
+    if (!editData.occupation) return false;
+    const normValue = value.split('/')[0].trim().toLowerCase();
+    const normCurrent = editData.occupation.split('/')[0].trim().toLowerCase();
+    return normValue === normCurrent || 
+           (normValue === 'other contact' && normCurrent === 'other') ||
+           (normValue === 'other' && normCurrent === 'other contact');
+  };
+
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '-';
     try {
@@ -694,7 +703,7 @@ export default function MembersPage() {
             className="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm transition-opacity duration-300"
           />
 
-          <div className="relative flex w-full max-w-lg flex-col rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-900 dark:bg-zinc-950 animate-fade-in-up z-10 max-h-[90vh]">
+          <div className="relative flex w-full max-w-2xl flex-col rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-900 dark:bg-zinc-950 animate-fade-in-up z-10 max-h-[90vh]">
             <div className="flex items-center justify-between border-b border-zinc-100 p-6 pb-4 dark:border-zinc-900">
               <h3 className="text-lg font-bold flex items-center gap-2 text-zinc-900 dark:text-white">
                 <Pencil className="h-5 w-5" /> Edit Member
@@ -707,102 +716,182 @@ export default function MembersPage() {
               </button>
             </div>
 
-            <div className="p-6 py-4 overflow-y-auto">
-              <div className="space-y-4">
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                  Edit details for <strong>{actionModal.user.display_name || 'Member'}</strong> below:
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  <div className="col-span-1 md:col-span-2">
-                    <label className="block text-xs font-semibold text-zinc-500 mb-1">Display Name</label>
-                    <input 
-                      type="text" 
-                      value={editData.display_name || ''} 
-                      onChange={e => setEditData(prev => ({ ...prev, display_name: e.target.value }))}
-                      className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 px-3 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-white" 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-500 mb-1">First Name</label>
-                    <input 
-                      type="text" 
-                      value={editData.first_name || ''} 
-                      onChange={e => setEditData(prev => ({ ...prev, first_name: e.target.value }))}
-                      className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 px-3 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-white" 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-500 mb-1">Last Name</label>
-                    <input 
-                      type="text" 
-                      value={editData.last_name || ''} 
-                      onChange={e => setEditData(prev => ({ ...prev, last_name: e.target.value }))}
-                      className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 px-3 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-white" 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-500 mb-1">Phone</label>
-                    <input 
-                      type="text" 
-                      value={editData.phone || ''} 
-                      onChange={e => setEditData(prev => ({ ...prev, phone: e.target.value }))}
-                      className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 px-3 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-white" 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-500 mb-1">Email</label>
-                    <input 
-                      type="email" 
-                      value={editData.email || ''} 
-                      onChange={e => setEditData(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 px-3 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-white" 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-500 mb-1">Occupation</label>
-                    <input 
-                      type="text" 
-                      value={editData.occupation || ''} 
-                      onChange={e => setEditData(prev => ({ ...prev, occupation: e.target.value }))}
-                      className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 px-3 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-white" 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-500 mb-1">Specialty</label>
-                    <select 
-                      value={editData.specialty || ''} 
-                      onChange={e => setEditData(prev => ({ ...prev, specialty: e.target.value }))}
-                      className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 px-3 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-white" 
-                    >
-                      <option value="">-- เลือกความเชี่ยวชาญ --</option>
-                      {SPECIALTIES.map(spec => (
-                        <option key={spec} value={spec}>{spec}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="col-span-1 md:col-span-2">
-                    <label className="block text-xs font-semibold text-zinc-500 mb-1">Organization</label>
-                    <input 
-                      type="text" 
-                      value={editData.organization || ''} 
-                      onChange={e => setEditData(prev => ({ ...prev, organization: e.target.value }))}
-                      className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 px-3 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-white" 
-                    />
-                  </div>
-                  <div className="col-span-1 md:col-span-2">
-                    <label className="block text-xs font-semibold text-zinc-500 mb-1">Status</label>
-                    <select 
-                      value={editData.status || 'Register'} 
-                      onChange={e => setEditData(prev => ({ ...prev, status: e.target.value }))}
-                      className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 px-3 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-white" 
-                    >
-                      <option value="Confirmed">Confirmed</option>
-                      <option value="Register">Register</option>
-                      <option value="Pending Verify">Pending Verify</option>
-                      <option value="Rejected">Rejected</option>
-                    </select>
+            <div className="p-6 py-4 overflow-y-auto flex-1">
+              <div className="space-y-6">
+                
+                {/* ข้อมูลส่วนตัว Section */}
+                <div>
+                  <h4 className="text-[#0055ff] dark:text-blue-400 font-bold text-lg mb-4">ข้อมูลส่วนตัว</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-4 gap-x-6 items-center">
+                    
+                    <label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                      ชื่อ (ภาษาไทย) <span className="text-red-500">*</span>
+                    </label>
+                    <div className="sm:col-span-2">
+                      <input 
+                        type="text" 
+                        value={editData.first_name || ''} 
+                        onChange={e => setEditData(prev => ({ ...prev, first_name: e.target.value }))}
+                        className="w-full rounded-md border border-zinc-300 bg-white py-2 px-3.5 text-sm text-zinc-800 focus:border-[#0055ff] focus:ring-1 focus:ring-[#0055ff] outline-none transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:text-white" 
+                        required
+                      />
+                    </div>
+
+                    <label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                      นามสกุล (ภาษาไทย) <span className="text-red-500">*</span>
+                    </label>
+                    <div className="sm:col-span-2">
+                      <input 
+                        type="text" 
+                        value={editData.last_name || ''} 
+                        onChange={e => setEditData(prev => ({ ...prev, last_name: e.target.value }))}
+                        className="w-full rounded-md border border-zinc-300 bg-white py-2 px-3.5 text-sm text-zinc-800 focus:border-[#0055ff] focus:ring-1 focus:ring-[#0055ff] outline-none transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:text-white" 
+                        required
+                      />
+                    </div>
+
+                    <label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                      ชื่อ Display Name (LINE)
+                    </label>
+                    <div className="sm:col-span-2">
+                      <input 
+                        type="text" 
+                        value={editData.display_name || ''} 
+                        onChange={e => setEditData(prev => ({ ...prev, display_name: e.target.value }))}
+                        className="w-full rounded-md border border-zinc-300 bg-white py-2 px-3.5 text-sm text-zinc-800 focus:border-[#0055ff] focus:ring-1 focus:ring-[#0055ff] outline-none transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:text-white" 
+                      />
+                    </div>
+
                   </div>
                 </div>
+
+                <hr className="border-zinc-200 dark:border-zinc-800" />
+
+                {/* ข้อมูลติดต่อ Section */}
+                <div>
+                  <h4 className="text-[#0055ff] dark:text-blue-400 font-bold text-lg mb-4">ข้อมูลติดต่อ</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-4 gap-x-6 items-center">
+                    
+                    <label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                      หมายเลขโทรศัพท์
+                    </label>
+                    <div className="sm:col-span-2">
+                      <input 
+                        type="text" 
+                        value={editData.phone || ''} 
+                        onChange={e => setEditData(prev => ({ ...prev, phone: e.target.value }))}
+                        className="w-full rounded-md border border-zinc-300 bg-white py-2 px-3.5 text-sm text-zinc-800 focus:border-[#0055ff] focus:ring-1 focus:ring-[#0055ff] outline-none transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:text-white" 
+                      />
+                    </div>
+
+                    <label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                      อีเมล์ <span className="text-red-500">*</span>
+                    </label>
+                    <div className="sm:col-span-2">
+                      <input 
+                        type="email" 
+                        value={editData.email || ''} 
+                        onChange={e => setEditData(prev => ({ ...prev, email: e.target.value }))}
+                        className="w-full rounded-md border border-zinc-300 bg-white py-2 px-3.5 text-sm text-zinc-800 focus:border-[#0055ff] focus:ring-1 focus:ring-[#0055ff] outline-none transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:text-white" 
+                        required
+                      />
+                    </div>
+
+                  </div>
+                </div>
+
+                <hr className="border-zinc-200 dark:border-zinc-800" />
+
+                {/* ข้อมูลอาชีพ Section */}
+                <div>
+                  <h4 className="text-[#0055ff] dark:text-blue-400 font-bold text-lg mb-4">ข้อมูลอาชีพ</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-4 gap-x-6 items-start">
+                    
+                    <label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 sm:pt-1">
+                      อาชีพ <span className="text-red-500">*</span>
+                    </label>
+                    <div className="sm:col-span-2 space-y-3">
+                      {[
+                        { value: 'Doctor / แพทย์', label: 'Doctor / แพทย์' },
+                        { value: 'Nurse / พยาบาล', label: 'Nurse / พยาบาล' },
+                        { value: 'Pharmacist / เภสัชกร', label: 'Pharmacist / เภสัชกร' },
+                        { value: 'Hospital/Clinic Officer / เจ้าหน้าที่โรงพยาบาล/คลินิก', label: 'Hospital/Clinic Officer / เจ้าหน้าที่โรงพยาบาล/คลินิก' },
+                        { value: 'Other Contact / อื่นๆ', label: 'Other Contact / อื่นๆ' }
+                      ].map((opt) => (
+                        <label key={opt.value} className="flex items-center gap-3 cursor-pointer text-sm text-zinc-700 dark:text-zinc-300">
+                          <input
+                            type="radio"
+                            name="edit-occupation"
+                            value={opt.value}
+                            checked={isOccupationChecked(opt.value)}
+                            onChange={(e) => setEditData(prev => ({ ...prev, occupation: e.target.value }))}
+                            className="h-5 w-5 rounded-full border-zinc-300 text-brand-blue focus:ring-brand-blue accent-brand-blue cursor-pointer"
+                          />
+                          <span>{opt.label}</span>
+                        </label>
+                      ))}
+                    </div>
+
+                    <label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 sm:pt-2">
+                      ความเชี่ยวชาญ <span className="text-red-500">*</span>
+                    </label>
+                    <div className="sm:col-span-2">
+                      <select 
+                        value={editData.specialty || ''} 
+                        onChange={e => setEditData(prev => ({ ...prev, specialty: e.target.value }))}
+                        className="w-full rounded-md border border-zinc-300 bg-white py-2 px-3.5 text-sm text-zinc-800 focus:border-[#0055ff] focus:ring-1 focus:ring-[#0055ff] outline-none transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:text-white cursor-pointer" 
+                        required
+                      >
+                        <option value="">-- เลือกความเชี่ยวชาญ --</option>
+                        {SPECIALTIES.map(spec => (
+                          <option key={spec} value={spec}>{spec}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 sm:pt-2">
+                      ชื่อองค์กร/สถานที่ทำงาน <span className="text-red-500">*</span>
+                    </label>
+                    <div className="sm:col-span-2">
+                      <input 
+                        type="text" 
+                        value={editData.organization || ''} 
+                        onChange={e => setEditData(prev => ({ ...prev, organization: e.target.value }))}
+                        className="w-full rounded-md border border-zinc-300 bg-white py-2 px-3.5 text-sm text-zinc-800 focus:border-[#0055ff] focus:ring-1 focus:ring-[#0055ff] outline-none transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:text-white" 
+                        required
+                      />
+                    </div>
+
+                  </div>
+                </div>
+
+                <hr className="border-zinc-200 dark:border-zinc-800" />
+
+                {/* ข้อมูลระบบ Section */}
+                <div>
+                  <h4 className="text-[#0055ff] dark:text-blue-400 font-bold text-lg mb-4">ข้อมูลระบบ</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-4 gap-x-6 items-center">
+                    
+                    <label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                      สถานะบัญชี <span className="text-red-500">*</span>
+                    </label>
+                    <div className="sm:col-span-2">
+                      <select 
+                        value={editData.status || 'Register'} 
+                        onChange={e => setEditData(prev => ({ ...prev, status: e.target.value }))}
+                        className="w-full rounded-md border border-zinc-300 bg-white py-2 px-3.5 text-sm text-zinc-800 focus:border-[#0055ff] focus:ring-1 focus:ring-[#0055ff] outline-none transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:text-white cursor-pointer" 
+                        required
+                      >
+                        <option value="Confirmed">Confirmed</option>
+                        <option value="Register">Register</option>
+                        <option value="Pending Verify">Pending Verify</option>
+                        <option value="Rejected">Rejected</option>
+                      </select>
+                    </div>
+
+                  </div>
+                </div>
+
               </div>
             </div>
 
