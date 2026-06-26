@@ -6,11 +6,48 @@ import {
   getMockContentLeaderboard, 
   getMockMembersList,
   MOCK_LOGS,
+  MOCK_MEMBERS,
   getMockFlexImpressions
 } from './mockData';
 
 // Class to manage unified dashboard queries (Mock vs Database)
 export class DashboardService {
+  static async deleteMember(userId: string): Promise<boolean> {
+    if (isDatabaseConfigured()) {
+      const database = getDatabaseClient();
+      if (database) {
+        const { error } = await database.from('members').delete().eq('user_id', userId);
+        if (error) throw error;
+        return true;
+      }
+    } else {
+      const idx = MOCK_MEMBERS.findIndex(m => m.user_id === userId);
+      if (idx !== -1) {
+        MOCK_MEMBERS.splice(idx, 1);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static async updateMember(userId: string, data: any): Promise<boolean> {
+    if (isDatabaseConfigured()) {
+      const database = getDatabaseClient();
+      if (database) {
+        const { error } = await database.from('members').update(data).eq('user_id', userId);
+        if (error) throw error;
+        return true;
+      }
+    } else {
+      const idx = MOCK_MEMBERS.findIndex(m => m.user_id === userId);
+      if (idx !== -1) {
+        MOCK_MEMBERS[idx] = { ...MOCK_MEMBERS[idx], ...data };
+        return true;
+      }
+    }
+    return false;
+  }
+
   
   // 1. Get Dashboard Stats
   static async getDashboardStats(): Promise<DashboardStats> {

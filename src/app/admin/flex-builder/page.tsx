@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   FileJson,
@@ -86,7 +86,6 @@ interface BroadcastResult {
 
 // ─── Constants & Mock Defaults ────────────────────────────────────────────────
 
-const OCCUPATIONS = ['Doctor', 'Nurse', 'Pharmacist', 'Hospital/Clinic Officer'];
 
 const createDefaultBubble = (id: string): FlexBubble => ({
   id,
@@ -177,6 +176,19 @@ export default function FlexBuilderPage() {
   
   // Database Members & LINE token
   const [members, setMembers] = useState<Member[]>([]);
+  const [channelAccessToken, setChannelAccessToken] = useState('');
+
+  // Derived available options from members
+  const availableOccupations = useMemo(() => {
+    const occs = new Set(members.filter(m => m.occupation).map(m => m.occupation as string));
+    return Array.from(occs).sort();
+  }, [members]);
+
+  const availableSpecialties = useMemo(() => {
+    const specs = new Set(members.filter(m => m.specialty).map(m => m.specialty as string));
+    return Array.from(specs).sort();
+  }, [members]);
+  
   const [loadingMembers, setLoadingMembers] = useState(true);
   const [lineToken, setLineToken] = useState('');
 
@@ -789,7 +801,7 @@ export default function FlexBuilderPage() {
                       className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs cursor-pointer outline-none focus:border-blue-500 focus:bg-white dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
                     >
                       <option value="All">ทั้งหมด (All Occupations)</option>
-                      {OCCUPATIONS.map(occ => (
+                      {availableOccupations.map(occ => (
                         <option key={occ} value={occ}>{occ}</option>
                       ))}
                     </select>
@@ -802,7 +814,7 @@ export default function FlexBuilderPage() {
                       className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs cursor-pointer outline-none focus:border-blue-500 focus:bg-white dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
                     >
                       <option value="All">ทั้งหมด (All Specialties)</option>
-                      {['Oncology', 'Hematology', 'General Medicine', 'Immunology', 'Cardiology'].map(spec => (
+                      {availableSpecialties.map(spec => (
                         <option key={spec} value={spec}>{spec}</option>
                       ))}
                     </select>

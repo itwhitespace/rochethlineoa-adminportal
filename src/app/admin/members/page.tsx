@@ -53,13 +53,13 @@ export default function MembersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
 
-  // Action Modal State
   const [actionModal, setActionModal] = useState<{
     isOpen: boolean;
     type: 'edit' | 'delete' | null;
     user: MemberAnalytics | null;
   }>({ isOpen: false, type: null, user: null });
   const [actionLoading, setActionLoading] = useState(false);
+  const [editData, setEditData] = useState<{ first_name?: string; last_name?: string; occupation?: string; specialty?: string }>({});
 
   const fetchData = async (
     pageNum: number = page, 
@@ -110,12 +110,7 @@ export default function MembersPage() {
     if (!actionModal.user) return;
     setActionLoading(true);
     try {
-      if (isDatabaseConfigured()) {
-        const database = getDatabaseClient();
-        if (database) {
-          await database.from('members').delete().eq('user_id', actionModal.user.user_id);
-        }
-      }
+      await DashboardService.deleteMember(actionModal.user.user_id);
       
       // Update local state to reflect deletion immediately, especially for mock mode
       setMembers(prev => prev.filter(m => m.user_id !== actionModal.user!.user_id));
@@ -131,10 +126,27 @@ export default function MembersPage() {
     }
   };
 
-  const confirmEdit = () => {
-    // Implement actual edit API call or DB update here when ready
-    alert(`This is a placeholder for saving edit data for member ID: ${actionModal.user?.user_id}`);
-    closeActionModal();
+  const confirmEdit = async () => {
+    if (!actionModal.user) return;
+    setActionLoading(true);
+    try {
+      await DashboardService.updateMember(actionModal.user.user_id, editData);
+      
+      setMembers(prev => prev.map(m => {
+        if (m.user_id === actionModal.user!.user_id) {
+          return { ...m, ...editData };
+        }
+        return m;
+      }));
+      
+      handleRefresh();
+      closeActionModal();
+    } catch (error) {
+      console.error('Failed to update member', error);
+      alert('Failed to update member');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleDeleteMember = (member: MemberAnalytics) => {
@@ -143,6 +155,12 @@ export default function MembersPage() {
 
   const handleEditMember = (member: MemberAnalytics) => {
     setActionModal({ isOpen: true, type: 'edit', user: member });
+    setEditData({
+      first_name: member.first_name || '',
+      last_name: member.last_name || '',
+      occupation: member.occupation || '',
+      specialty: member.specialty || ''
+    });
   };
 
   const closeActionModal = () => {
@@ -716,16 +734,44 @@ export default function MembersPage() {
               ) : (
                 <div className="space-y-4">
                   <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                    Edit functionality for <strong>{actionModal.user.display_name || 'Member'}</strong> is being implemented. You can view the member's current properties below:
+                    Edit details for <strong>{actionModal.user.display_name || 'Member'}</strong> below:
                   </p>
                   <div className="space-y-3 mt-4">
                     <div>
                       <label className="block text-xs font-semibold text-zinc-500 mb-1">First Name</label>
-                      <input type="text" readOnly value={actionModal.user.first_name || ''} className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 px-3 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400 cursor-not-allowed" />
+                      <input 
+                        type="text" 
+                        value={editData.first_name || ''} 
+                        onChange={e => setEditData(prev => ({ ...prev, first_name: e.target.value }))}
+                        className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 px-3 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-white" 
+                      />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-zinc-500 mb-1">Last Name</label>
-                      <input type="text" readOnly value={actionModal.user.last_name || ''} className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 px-3 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400 cursor-not-allowed" />
+                      <input 
+                        type="text" 
+                        value={editData.last_name || ''} 
+                        onChange={e => setEditData(prev => ({ ...prev, last_name: e.target.value }))}
+                        className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 px-3 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-white" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-500 mb-1">Occupation</label>
+                      <input 
+                        type="text" 
+                        value={editData.occupation || ''} 
+                        onChange={e => setEditData(prev => ({ ...prev, occupation: e.target.value }))}
+                        className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 px-3 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-white" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-500 mb-1">Specialty</label>
+                      <input 
+                        type="text" 
+                        value={editData.specialty || ''} 
+                        onChange={e => setEditData(prev => ({ ...prev, specialty: e.target.value }))}
+                        className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 px-3 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-white" 
+                      />
                     </div>
                   </div>
                 </div>
