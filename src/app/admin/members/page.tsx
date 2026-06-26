@@ -72,7 +72,7 @@ export default function MembersPage() {
   }>({});
 
   const SPECIALTIES = [
-    "Anesthesiology", "Cardiology", "Dermatology", "Endocrinology, Diabetes and Metabolism",
+    "Anesthesiology", "Cardiology", "Dermatology", "Endocrinology / Diabetes and Metabolism",
     "Family Medicine", "Gastroenterology", "General Nursing", "General Practice",
     "General Preventive Medicine", "General Surgery", "Gynaecological Oncology",
     "Gynaecology", "Haematology (Internal Medicine)", "Hepatobiliary Surgery",
@@ -210,7 +210,7 @@ export default function MembersPage() {
 
   // Predefined filter options based on mock data
   const occupationsList = ['Doctor', 'Nurse', 'Pharmacist', 'Hospital/Clinic Officer'];
-  const specialtiesList = ['Oncology', 'Hematology', 'General Medicine', 'Immunology', 'Cardiology'];
+  const specialtiesList = SPECIALTIES;
 
   return (
     <>

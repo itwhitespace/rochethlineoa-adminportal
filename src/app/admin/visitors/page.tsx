@@ -50,6 +50,22 @@ export default function VisitorsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
 
+  const SPECIALTIES = [
+    "Anesthesiology", "Cardiology", "Dermatology", "Endocrinology / Diabetes and Metabolism",
+    "Family Medicine", "Gastroenterology", "General Nursing", "General Practice",
+    "General Preventive Medicine", "General Surgery", "Gynaecological Oncology",
+    "Gynaecology", "Haematology (Internal Medicine)", "Hepatobiliary Surgery",
+    "Hepatology", "Infectious Disease", "Internal Medicine", "Interventional Radiology",
+    "Medical Oncology", "Nephrology", "Neurology", "Nutrition", "Ophthalmology",
+    "Orthopaedics", "Other", "Otolaryngology / Ear, Nose and Throat",
+    "Paediatric Endocrinology", "Paediatric Gastroenterology", "Paediatric Haematology",
+    "Paediatric Infectious Disease", "Paediatric Nephrology", "Paediatric Neurology",
+    "Paediatrics", "Pathology", "Pharmaceutical Medicine", "Physical Medicine and Rehabilitation",
+    "Psychiatry", "Pulmonary Disease", "Radiation Oncology", "Radiology",
+    "Retinal Ophthalmology", "Rheumatology", "Surgical Oncology", "Thoracic Surgery",
+    "Unspecified", "Urology"
+  ];
+
   const fetchData = async (
     pageNum: number = page, 
     searchStr: string = search, 
@@ -118,7 +134,7 @@ export default function VisitorsPage() {
 
   // Predefined filter options based on mock data
   const occupationsList = ['Doctor', 'Nurse', 'Pharmacist', 'Hospital/Clinic Officer'];
-  const specialtiesList = ['Oncology', 'Hematology', 'General Medicine', 'Immunology', 'Cardiology'];
+  const specialtiesList = SPECIALTIES;
 
   return (
     <>
