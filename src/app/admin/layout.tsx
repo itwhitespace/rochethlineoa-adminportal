@@ -106,7 +106,7 @@ export default function AdminLayout({
     { name: 'Members', href: '/admin/members', icon: UserCheck },
     { name: 'Generate URL Tracking', href: '/admin/generate-url', icon: Link2 },
     { name: 'Flex Message Builder', href: '/admin/flex-builder', icon: FileJson },
-    { name: 'Broadcast Message', href: '/admin/broadcast', icon: Megaphone },
+
     { name: 'Impression Data', href: '/admin/impression-data', icon: Eye },
     { name: 'Setting', href: '/admin/settings', icon: Settings },
   ];

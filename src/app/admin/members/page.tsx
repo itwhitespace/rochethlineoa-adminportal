@@ -20,8 +20,11 @@ import {
   Lock,
   ExternalLink,
   Copy,
-  Check
+  Check,
+  Pencil,
+  Trash2
 } from 'lucide-react';
+import { getDatabaseClient, isDatabaseConfigured } from '@/lib/database';
 import { DashboardService } from '@/lib/dashboardService';
 import { MemberAnalytics, ContentLeaderboard } from '@/lib/types';
 
@@ -93,6 +96,29 @@ export default function MembersPage() {
     navigator.clipboard.writeText(userId);
     setCopiedId(true);
     setTimeout(() => setCopiedId(false), 2000);
+  };
+
+  const handleDeleteMember = async (userId: string, name: string) => {
+    if (confirm(`Are you sure you want to delete member: ${name}?`)) {
+      try {
+        if (isDatabaseConfigured()) {
+          const database = getDatabaseClient();
+          if (database) {
+            await database.from('members').delete().eq('user_id', userId);
+          }
+        }
+        alert(`Member ${name} deleted successfully`);
+        handleRefresh();
+      } catch (error) {
+        console.error('Failed to delete member', error);
+        alert('Failed to delete member');
+      }
+    }
+  };
+
+  const handleEditMember = (userId: string) => {
+    alert(`Edit functionality for member ID: ${userId} will be implemented in the modal.`);
+    // TODO: Open edit modal
   };
 
   const formatDate = (dateStr: string | null) => {
@@ -345,16 +371,32 @@ export default function MembersPage() {
 
                     {/* Action Button */}
                     <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => {
-                          setSelectedUser(member);
-                          setIsModalOpen(true);
-                        }}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-55 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                        <span>View</span>
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedUser(member);
+                            setIsModalOpen(true);
+                          }}
+                          className="inline-flex items-center justify-center rounded-lg border border-zinc-200 bg-white p-1.5 text-zinc-500 shadow-xs hover:bg-zinc-50 hover:text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                          title="View Details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleEditMember(member.user_id)}
+                          className="inline-flex items-center justify-center rounded-lg border border-zinc-200 bg-white p-1.5 text-zinc-500 shadow-xs hover:bg-zinc-50 hover:text-brand-blue dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-brand-blue"
+                          title="Edit Member"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMember(member.user_id, member.display_name || 'User')}
+                          className="inline-flex items-center justify-center rounded-lg border border-zinc-200 bg-white p-1.5 text-zinc-500 shadow-xs hover:bg-red-50 hover:text-red-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-red-950/30 dark:hover:text-red-400"
+                          title="Delete Member"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

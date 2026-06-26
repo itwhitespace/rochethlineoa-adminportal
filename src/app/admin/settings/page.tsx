@@ -112,13 +112,39 @@ export default function SettingsPage() {
       }
     } catch (e) {}
 
-    // 3. Load or initialize LIFF ID
-    const storedLiff = localStorage.getItem('roche_liff_id');
-    if (storedLiff) {
-      setLiffId(storedLiff);
-    } else {
-      localStorage.setItem('roche_liff_id', '2001928374-lkJae12P');
-    }
+    // 3. Load or initialize LIFF ID & Token
+    const loadConfigs = async () => {
+      let loadedLiff = localStorage.getItem('roche_liff_id') || '2001928374-lkJae12P';
+      let loadedToken = localStorage.getItem('roche_line_token') || '';
+
+      if (configured) {
+        const database = getDatabaseClient();
+        if (database) {
+          try {
+            const { data, error } = await database.from('system_configs').select('key, value');
+            if (!error && data) {
+              const liffConf = data.find((c: any) => c.key === 'line_liff_id');
+              const tokenConf = data.find((c: any) => c.key === 'line_channel_access_token');
+              if (liffConf) {
+                loadedLiff = liffConf.value;
+                localStorage.setItem('roche_liff_id', loadedLiff);
+              }
+              if (tokenConf) {
+                loadedToken = tokenConf.value;
+                localStorage.setItem('roche_line_token', loadedToken);
+              }
+            }
+          } catch (e) {
+             console.error("Error loading config from DB:", e);
+          }
+        }
+      }
+
+      setLiffId(loadedLiff);
+      setLineToken(loadedToken);
+    };
+
+    loadConfigs();
 
     // 3.5 Load or initialize LINE Token
     const storedToken = localStorage.getItem('roche_line_token');
@@ -242,21 +268,45 @@ export default function SettingsPage() {
       if (confirmType === 'liff') {
         // Save LIFF ID
         const oldLiff = liffId;
-        localStorage.setItem('roche_liff_id', newLiffId.trim());
-        setLiffId(newLiffId.trim());
+        const newLiff = newLiffId.trim();
+
+        if (isLive) {
+          const database = getDatabaseClient();
+          if (database) {
+             await database.from('system_configs').upsert(
+               { key: 'line_liff_id', value: newLiff, updated_by: confirmEmail.trim(), updated_at: new Date().toISOString() }, 
+               { onConflict: 'key' }
+             );
+          }
+        }
+
+        localStorage.setItem('roche_liff_id', newLiff);
+        setLiffId(newLiff);
 
         // Log action
-        addHistoryLog(`Updated LIFF ID from '${oldLiff}' to '${newLiffId.trim()}'`, confirmEmail.trim());
+        addHistoryLog(`Updated LIFF ID from '${oldLiff}' to '${newLiff}'`, confirmEmail.trim());
 
         setSuccess('LIFF ID updated successfully!');
       } else {
         // Save LINE Token
         const oldToken = lineToken ? `${lineToken.substring(0, 5)}...` : 'empty';
-        localStorage.setItem('roche_line_token', newLineToken.trim());
-        setLineToken(newLineToken.trim());
+        const newToken = newLineToken.trim();
+
+        if (isLive) {
+          const database = getDatabaseClient();
+          if (database) {
+             await database.from('system_configs').upsert(
+               { key: 'line_channel_access_token', value: newToken, updated_by: confirmEmail.trim(), updated_at: new Date().toISOString() }, 
+               { onConflict: 'key' }
+             );
+          }
+        }
+
+        localStorage.setItem('roche_line_token', newToken);
+        setLineToken(newToken);
 
         // Log action
-        addHistoryLog(`Updated LINE Channel Access Token from '${oldToken}' to '${newLineToken.trim().substring(0, 5)}...'`, confirmEmail.trim());
+        addHistoryLog(`Updated LINE Channel Access Token from '${oldToken}' to '${newToken.substring(0, 5)}...'`, confirmEmail.trim());
 
         setSuccess('LINE Channel Access Token updated successfully!');
       }
