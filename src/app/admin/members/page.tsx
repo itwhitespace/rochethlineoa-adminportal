@@ -53,6 +53,14 @@ export default function MembersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
 
+  // Action Modal State
+  const [actionModal, setActionModal] = useState<{
+    isOpen: boolean;
+    type: 'edit' | 'delete' | null;
+    user: MemberAnalytics | null;
+  }>({ isOpen: false, type: null, user: null });
+  const [actionLoading, setActionLoading] = useState(false);
+
   const fetchData = async (
     pageNum: number = page, 
     searchStr: string = search, 
@@ -98,27 +106,47 @@ export default function MembersPage() {
     setTimeout(() => setCopiedId(false), 2000);
   };
 
-  const handleDeleteMember = async (userId: string, name: string) => {
-    if (confirm(`Are you sure you want to delete member: ${name}?`)) {
-      try {
-        if (isDatabaseConfigured()) {
-          const database = getDatabaseClient();
-          if (database) {
-            await database.from('members').delete().eq('user_id', userId);
-          }
+  const confirmDelete = async () => {
+    if (!actionModal.user) return;
+    setActionLoading(true);
+    try {
+      if (isDatabaseConfigured()) {
+        const database = getDatabaseClient();
+        if (database) {
+          await database.from('members').delete().eq('user_id', actionModal.user.user_id);
         }
-        alert(`Member ${name} deleted successfully`);
-        handleRefresh();
-      } catch (error) {
-        console.error('Failed to delete member', error);
-        alert('Failed to delete member');
       }
+      
+      // Update local state to reflect deletion immediately, especially for mock mode
+      setMembers(prev => prev.filter(m => m.user_id !== actionModal.user!.user_id));
+      setTotalItems(prev => Math.max(0, prev - 1));
+      
+      handleRefresh();
+      closeActionModal();
+    } catch (error) {
+      console.error('Failed to delete member', error);
+      alert('Failed to delete member');
+    } finally {
+      setActionLoading(false);
     }
   };
 
-  const handleEditMember = (userId: string) => {
-    alert(`Edit functionality for member ID: ${userId} will be implemented in the modal.`);
-    // TODO: Open edit modal
+  const confirmEdit = () => {
+    // Implement actual edit API call or DB update here when ready
+    alert(`This is a placeholder for saving edit data for member ID: ${actionModal.user?.user_id}`);
+    closeActionModal();
+  };
+
+  const handleDeleteMember = (member: MemberAnalytics) => {
+    setActionModal({ isOpen: true, type: 'delete', user: member });
+  };
+
+  const handleEditMember = (member: MemberAnalytics) => {
+    setActionModal({ isOpen: true, type: 'edit', user: member });
+  };
+
+  const closeActionModal = () => {
+    setActionModal({ isOpen: false, type: null, user: null });
   };
 
   const formatDate = (dateStr: string | null) => {
@@ -383,14 +411,14 @@ export default function MembersPage() {
                           <Eye className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => handleEditMember(member.user_id)}
+                          onClick={() => handleEditMember(member)}
                           className="inline-flex items-center justify-center rounded-lg border border-zinc-200 bg-white p-1.5 text-zinc-500 shadow-xs hover:bg-zinc-50 hover:text-brand-blue dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-brand-blue"
                           title="Edit Member"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => handleDeleteMember(member.user_id, member.display_name || 'User')}
+                          onClick={() => handleDeleteMember(member)}
                           className="inline-flex items-center justify-center rounded-lg border border-zinc-200 bg-white p-1.5 text-zinc-500 shadow-xs hover:bg-red-50 hover:text-red-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-red-950/30 dark:hover:text-red-400"
                           title="Delete Member"
                         >
@@ -632,6 +660,105 @@ export default function MembersPage() {
 
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Action Modal (Edit / Delete) */}
+      {actionModal.isOpen && actionModal.user && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6">
+          <div 
+            onClick={closeActionModal}
+            className="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm transition-opacity duration-300"
+          />
+
+          <div className="relative flex w-full max-w-md flex-col rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-zinc-900 dark:bg-zinc-950 animate-fade-in-up z-10">
+            <div className="flex items-center justify-between border-b border-zinc-100 pb-4 dark:border-zinc-900">
+              <h3 className={`text-lg font-bold flex items-center gap-2 ${actionModal.type === 'delete' ? 'text-red-600 dark:text-red-400' : 'text-zinc-900 dark:text-white'}`}>
+                {actionModal.type === 'delete' ? (
+                  <><Trash2 className="h-5 w-5" /> Confirm Delete</>
+                ) : (
+                  <><Pencil className="h-5 w-5" /> Edit Member</>
+                )}
+              </h3>
+              <button 
+                onClick={closeActionModal}
+                className="rounded-lg p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-500"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="py-6">
+              {actionModal.type === 'delete' ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    Are you sure you want to delete this member? This action cannot be undone.
+                  </p>
+                  <div className="rounded-lg bg-zinc-50 p-4 dark:bg-zinc-900/50 flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden flex-shrink-0">
+                      {actionModal.user.picture_url ? (
+                        <img src={actionModal.user.picture_url} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center font-bold text-zinc-500">
+                          {getInitials(actionModal.user.display_name)}
+                        </div>
+                      )}
+                    </div>
+                    <div className="overflow-hidden">
+                      <p className="font-bold text-zinc-900 dark:text-white truncate">
+                        {actionModal.user.display_name || actionModal.user.first_name || 'Unknown User'}
+                      </p>
+                      <p className="text-xs text-zinc-500 truncate font-mono">{actionModal.user.user_id}</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    Edit functionality for <strong>{actionModal.user.display_name || 'Member'}</strong> is being implemented. You can view the member's current properties below:
+                  </p>
+                  <div className="space-y-3 mt-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-500 mb-1">First Name</label>
+                      <input type="text" readOnly value={actionModal.user.first_name || ''} className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 px-3 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400 cursor-not-allowed" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-500 mb-1">Last Name</label>
+                      <input type="text" readOnly value={actionModal.user.last_name || ''} className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 px-3 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400 cursor-not-allowed" />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-900">
+              <button
+                onClick={closeActionModal}
+                disabled={actionLoading}
+                className="rounded-lg px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              >
+                Cancel
+              </button>
+              {actionModal.type === 'delete' ? (
+                <button
+                  onClick={confirmDelete}
+                  disabled={actionLoading}
+                  className="flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                >
+                  {actionLoading && <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />}
+                  Delete
+                </button>
+              ) : (
+                <button
+                  onClick={confirmEdit}
+                  disabled={actionLoading}
+                  className="flex items-center justify-center gap-2 rounded-lg bg-brand-blue px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  Save Changes
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

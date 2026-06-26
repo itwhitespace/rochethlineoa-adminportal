@@ -173,6 +173,7 @@ export default function FlexBuilderPage() {
   // Targeting States
   const [targetType, setTargetType] = useState<'all' | 'confirmed'>('confirmed');
   const [occupationTarget, setOccupationTarget] = useState<string>('All');
+  const [specialtyTarget, setSpecialtyTarget] = useState<string>('All');
   
   // Database Members & LINE token
   const [members, setMembers] = useState<Member[]>([]);
@@ -204,7 +205,7 @@ export default function FlexBuilderPage() {
       try {
         const { data, error } = await database
           .from('members')
-          .select('user_id, display_name, first_name, last_name, status, occupation')
+          .select('user_id, display_name, first_name, last_name, status, occupation, specialty')
           .order('created_at', { ascending: false });
         if (!error && data) {
           setMembers(data as Member[]);
@@ -225,8 +226,9 @@ export default function FlexBuilderPage() {
     } else {
       // Specific Confirm
       if (m.status !== 'Confirmed') return false;
-      if (occupationTarget === 'All') return true;
-      return m.occupation === occupationTarget;
+      if (occupationTarget !== 'All' && m.occupation !== occupationTarget) return false;
+      if (specialtyTarget !== 'All' && m.specialty !== specialtyTarget) return false;
+      return true;
     }
   });
 
@@ -778,18 +780,33 @@ export default function FlexBuilderPage() {
               </div>
 
               {targetType === 'confirmed' && (
-                <div>
-                  <label className="block text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 mb-1">กลุ่มอาชีพของ User</label>
-                  <select
-                    value={occupationTarget}
-                    onChange={e => setOccupationTarget(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs cursor-pointer outline-none focus:border-blue-500 focus:bg-white dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
-                  >
-                    <option value="All">ทั้งหมด (All Occupations)</option>
-                    {OCCUPATIONS.map(occ => (
-                      <option key={occ} value={occ}>{occ}</option>
-                    ))}
-                  </select>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 mb-1">กลุ่มอาชีพของ User</label>
+                    <select
+                      value={occupationTarget}
+                      onChange={e => setOccupationTarget(e.target.value)}
+                      className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs cursor-pointer outline-none focus:border-blue-500 focus:bg-white dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                    >
+                      <option value="All">ทั้งหมด (All Occupations)</option>
+                      {OCCUPATIONS.map(occ => (
+                        <option key={occ} value={occ}>{occ}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 mb-1">ความเชี่ยวชาญ (Specialty)</label>
+                    <select
+                      value={specialtyTarget}
+                      onChange={e => setSpecialtyTarget(e.target.value)}
+                      className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs cursor-pointer outline-none focus:border-blue-500 focus:bg-white dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                    >
+                      <option value="All">ทั้งหมด (All Specialties)</option>
+                      {['Oncology', 'Hematology', 'General Medicine', 'Immunology', 'Cardiology'].map(spec => (
+                        <option key={spec} value={spec}>{spec}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               )}
 
