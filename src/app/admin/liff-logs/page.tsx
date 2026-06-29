@@ -4,15 +4,19 @@ import { useState, useEffect } from 'react';
 import { 
   ExternalLink, 
   Search, 
-  Sparkles, 
   Users, 
   Megaphone, 
-  FileText,
-  Loader2,
-  Calendar,
-  Layers,
-  ArrowUpDown,
-  MousePointerClick
+  Loader2, 
+  Calendar, 
+  ArrowUpDown, 
+  MousePointerClick,
+  Eye,
+  Clock,
+  User,
+  Building,
+  X,
+  Copy,
+  Check
 } from 'lucide-react';
 import { DashboardService } from '@/lib/dashboardService';
 import { LiffLog } from '@/lib/types';
@@ -31,6 +35,12 @@ export default function LiffLogsPage() {
   
   // Sort State
   const [sortAsc, setSortAsc] = useState(false);
+
+  // Centered Modal States
+  const [selectedLog, setSelectedLog] = useState<LiffLog | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [copiedId, setCopiedId] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
 
   // Get unique lists for dropdown filters
   const uniqueCampaignsList = Array.from(
@@ -295,16 +305,14 @@ CREATE POLICY "Allow public select" ON liff_logs FOR SELECT USING (true);`}
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left text-sm text-zinc-500 dark:text-zinc-400">
-              <thead className="border-b border-zinc-100 bg-zinc-50 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
+              <thead className="border-b border-zinc-100 bg-zinc-50 text-xs font-bold uppercase tracking-wider text-zinc-550 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
                 <tr>
                   <th scope="col" className="px-6 py-4">โปรไฟล์ / สมาชิก (Member)</th>
-                  <th scope="col" className="px-6 py-4">LINE User ID</th>
-                  <th scope="col" className="px-6 py-4">กลุ่มวิชาชีพ / หน่วยงาน</th>
-                  <th scope="col" className="px-6 py-4">แคมเปญ (Campaign)</th>
-                  <th scope="col" className="px-6 py-4">Content ID</th>
-                  <th scope="col" className="px-6 py-4">ลิงก์ปลายทาง (Target)</th>
-                  <th scope="col" className="px-6 py-4">ที่มา / DA</th>
+                  <th scope="col" className="px-6 py-4">กลุ่มวิชาชีพ & สังกัด</th>
+                  <th scope="col" className="px-6 py-4">แคมเปญ & ช่องทาง (Campaign/Source)</th>
+                  <th scope="col" className="px-6 py-4">คอนเทนต์เป้าหมาย (Target)</th>
                   <th scope="col" className="px-6 py-4">เวลาคลิก (Timestamp)</th>
+                  <th scope="col" className="px-6 py-4 text-center">รายละเอียด</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -317,7 +325,7 @@ CREATE POLICY "Allow public select" ON liff_logs FOR SELECT USING (true);`}
                       key={log.id || idx}
                       className="hover:bg-zinc-50/80 dark:hover:bg-white/[0.08] transition-colors"
                     >
-                      {/* Profile Card */}
+                      {/* 1. Member Profile */}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           {log.picture_url ? (
@@ -338,88 +346,80 @@ CREATE POLICY "Allow public select" ON liff_logs FOR SELECT USING (true);`}
                             <span className="font-semibold text-zinc-900 dark:text-white block">
                               {nameDisplay}
                             </span>
-                            {fullName && log.display_name && (
-                              <span className="text-xs text-zinc-400 dark:text-zinc-500 block">
-                                Line: {log.display_name}
-                              </span>
-                            )}
+                            <span className="font-mono text-[10px] text-zinc-400 dark:text-zinc-500 block truncate max-w-[140px]" title={log.user_id}>
+                              {log.user_id}
+                            </span>
                           </div>
                         </div>
                       </td>
 
-                      {/* User ID */}
-                      <td className="px-6 py-4">
-                        <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-mono text-zinc-600 dark:bg-white/5 dark:text-zinc-300 border dark:border-white/10">
-                          {log.user_id}
-                        </code>
-                      </td>
-
-                      {/* Professional Info */}
+                      {/* 2. Professional Info */}
                       <td className="px-6 py-4">
                         {log.occupation ? (
                           <div>
-                            <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-1 text-xs font-semibold text-purple-700 dark:bg-purple-950/30 dark:text-purple-400">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-xs font-semibold text-purple-700 dark:bg-purple-950/30 dark:text-purple-400">
                               {log.occupation}
                             </span>
                             {log.organization && (
-                              <span className="text-xs text-zinc-400 dark:text-zinc-500 block mt-1">
+                              <span className="text-xs text-zinc-400 dark:text-zinc-500 block mt-0.5 truncate max-w-[150px]" title={log.organization}>
                                 {log.organization}
                               </span>
                             )}
                           </div>
                         ) : (
-                          <span className="text-xs text-zinc-400 italic">ไม่ระบุข้อมูล</span>
+                          <span className="text-xs text-zinc-400 italic dark:text-zinc-500">ไม่ระบุข้อมูล</span>
                         )}
                       </td>
 
-                      {/* Campaign Name */}
+                      {/* 3. Campaign & Source */}
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-1.5">
-                          <span className="h-2 w-2 rounded-full bg-purple-500" />
-                          <span className="font-medium text-zinc-900 dark:text-zinc-200">
-                            {log.campaign_name || 'N/A'}
+                        <div>
+                          <div className="flex items-center gap-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-purple-500" />
+                            <span className="font-semibold text-zinc-850 dark:text-zinc-200 text-xs truncate max-w-[160px]" title={log.campaign_name || 'N/A'}>
+                              {log.campaign_name || 'N/A'}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-zinc-400 dark:text-zinc-500 block mt-0.5">
+                            Src: {log.even_source || 'N/A'} • DA: {log.even_da || 'N/A'}
                           </span>
                         </div>
                       </td>
 
-                      {/* Content ID */}
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-700 dark:bg-white/5 dark:text-zinc-300 border dark:border-white/10">
-                          {log.content_id || 'N/A'}
-                        </span>
-                      </td>
-
-                      {/* Target Link */}
-                      <td className="px-6 py-4 max-w-xs">
-                        {log.target ? (
-                          <a 
-                            href={log.target.startsWith('/') ? `https://www.roche.co.th${log.target}` : log.target}
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-xs text-blue-600 dark:text-blue-400 font-medium hover:underline flex items-center gap-1 truncate"
-                          >
-                            <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                            {getShortUrl(log.target)}
-                          </a>
-                        ) : (
-                          <span className="text-xs text-zinc-400">-</span>
-                        )}
-                      </td>
-
-                      {/* Source & DA */}
-                      <td className="px-6 py-4">
-                        <div className="text-xs">
-                          <span className="text-zinc-750 dark:text-zinc-300 block font-medium">Src: {log.even_source || 'N/A'}</span>
-                          <span className="text-zinc-400 dark:text-zinc-500 block mt-0.5">DA: {log.even_da || 'N/A'}</span>
+                      {/* 4. Target Content */}
+                      <td className="px-6 py-4 max-w-[180px]">
+                        <div>
+                          <span className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-1.5 py-0.5 text-xs font-mono font-semibold text-zinc-700 dark:bg-white/5 dark:text-zinc-300 border dark:border-white/10">
+                            {log.content_id || 'N/A'}
+                          </span>
+                          {log.target && (
+                            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 block mt-1 truncate max-w-[170px]" title={log.target}>
+                              {getShortUrl(log.target)}
+                            </span>
+                          )}
                         </div>
                       </td>
 
-                      {/* Timestamp */}
+                      {/* 5. Timestamp */}
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
+                        <div className="flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-400">
                           <Calendar className="h-3.5 w-3.5 text-zinc-400" />
                           <span>{formatDate(log.created_at)}</span>
                         </div>
+                      </td>
+
+                      {/* 6. Action Button (View Details) */}
+                      <td className="px-6 py-4 text-center">
+                        <button
+                          onClick={() => {
+                            setSelectedLog(log);
+                            setIsModalOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 transition-all"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          <span>View</span>
+                        </button>
                       </td>
 
                     </tr>
@@ -430,6 +430,200 @@ CREATE POLICY "Allow public select" ON liff_logs FOR SELECT USING (true);`}
           </div>
         )}
       </div>
+
+      {/* Detail Centered Modal */}
+      {isModalOpen && selectedLog && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          {/* Backdrop */}
+          <div 
+            onClick={() => setIsModalOpen(false)}
+            className="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm transition-opacity duration-300"
+          />
+
+          {/* Dialog Panel */}
+          <div className="relative flex w-full max-w-2xl flex-col rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-zinc-900 dark:bg-zinc-950 animate-fade-in-up max-h-[90vh] overflow-y-auto z-10">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-zinc-100 pb-4 dark:border-zinc-900">
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                <MousePointerClick className="h-5 w-5 text-brand-blue" />
+                <span>LIFF Click Log Details</span>
+              </h3>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="rounded-lg p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-500"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Profile Avatar Card */}
+            <div className="flex flex-col items-center gap-4 py-6 border-b border-zinc-100 dark:border-zinc-900">
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 border-2 border-purple-500/30 overflow-hidden shadow-sm">
+                {selectedLog.picture_url ? (
+                  <img
+                    src={selectedLog.picture_url}
+                    alt={selectedLog.display_name || 'User'}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-xl font-bold text-zinc-400">
+                    {selectedLog.display_name?.slice(0, 2).toUpperCase() || 'U'}
+                  </span>
+                )}
+              </div>
+              <div className="text-center">
+                <h4 className="text-base font-bold text-zinc-900 dark:text-white">
+                  {[selectedLog.first_name, selectedLog.last_name].filter(Boolean).join(' ').trim() || selectedLog.display_name || 'Anonymous LINE User'}
+                </h4>
+                <p className="text-xs text-zinc-400 mt-0.5">LINE Display Name: {selectedLog.display_name || '-'}</p>
+              </div>
+            </div>
+
+            {/* Info Sections */}
+            <div className="flex-1 py-6 space-y-6">
+              
+              {/* LINE Info */}
+              <div className="space-y-3">
+                <h5 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">LINE Platform Data</h5>
+                <div className="rounded-lg bg-zinc-50 p-3.5 dark:bg-zinc-900/50 space-y-2.5 text-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-500 font-medium">LINE User ID</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-[11px] text-zinc-900 dark:text-white bg-white border border-zinc-200 px-2 py-0.5 rounded dark:bg-zinc-900 dark:border-zinc-800">
+                        {selectedLog.user_id}
+                      </span>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(selectedLog.user_id);
+                          setCopiedId(true);
+                          setTimeout(() => setCopiedId(false), 2000);
+                        }}
+                        className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500"
+                        title="Copy User ID"
+                      >
+                        {copiedId ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Campaign & Click Analytics */}
+              <div className="space-y-3">
+                <h5 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Campaign & Click Analytics</h5>
+                <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4 space-y-4 text-xs">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[10px] font-semibold text-zinc-400 uppercase">Campaign Name</p>
+                      <p className="font-bold text-zinc-850 dark:text-white mt-0.5">{selectedLog.campaign_name || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold text-zinc-400 uppercase">Content ID</p>
+                      <p className="font-mono font-bold text-zinc-850 dark:text-white mt-0.5">{selectedLog.content_id || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold text-zinc-400 uppercase">Event Source</p>
+                      <p className="font-semibold text-zinc-800 dark:text-zinc-200 mt-0.5">{selectedLog.even_source || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold text-zinc-400 uppercase">Event DA (Target Area)</p>
+                      <p className="font-semibold text-zinc-800 dark:text-zinc-200 mt-0.5">{selectedLog.even_da || 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-zinc-100 dark:border-zinc-900 pt-3">
+                    <p className="text-[10px] font-semibold text-zinc-400 uppercase">Click Timestamp</p>
+                    <p className="font-semibold text-zinc-800 dark:text-zinc-200 mt-0.5 flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5 text-zinc-400" />
+                      {formatDate(selectedLog.created_at)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Destination Links */}
+              <div className="space-y-3">
+                <h5 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Destination Links</h5>
+                <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4 space-y-3 text-xs">
+                  <div>
+                    <p className="text-[10px] font-semibold text-zinc-400 uppercase">Target URL (Redirect Destination)</p>
+                    <a 
+                      href={selectedLog.target?.startsWith('/') ? `https://www.roche.co.th${selectedLog.target}` : selectedLog.target}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 dark:text-blue-400 font-semibold hover:underline flex items-center gap-1 mt-1 truncate"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
+                      {selectedLog.target || '-'}
+                    </a>
+                  </div>
+                  
+                  <div className="border-t border-zinc-100 dark:border-zinc-900 pt-3">
+                    <p className="text-[10px] font-semibold text-zinc-400 uppercase">Full Entry Link</p>
+                    <div className="flex items-center justify-between gap-2 mt-1">
+                      <p className="font-mono text-[10px] text-zinc-500 truncate select-all flex-1">{selectedLog.full_url || '-'}</p>
+                      {selectedLog.full_url && (
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(selectedLog.full_url!);
+                            setCopiedUrl(true);
+                            setTimeout(() => setCopiedUrl(false), 2000);
+                          }}
+                          className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 flex-shrink-0"
+                          title="Copy Full Link"
+                        >
+                          {copiedUrl ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* HCP Profile Info (If registered) */}
+              <div className="space-y-3">
+                <h5 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">HCP Profile Data</h5>
+                <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4 text-xs">
+                  {selectedLog.occupation ? (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-start gap-2.5">
+                        <User className="h-4.5 w-4.5 text-zinc-400 mt-0.5" />
+                        <div>
+                          <p className="text-[10px] font-semibold text-zinc-400 uppercase">Occupation</p>
+                          <p className="font-bold text-zinc-850 dark:text-white mt-0.5">{selectedLog.occupation}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <Building className="h-4.5 w-4.5 text-zinc-400 mt-0.5" />
+                        <div>
+                          <p className="text-[10px] font-semibold text-zinc-400 uppercase">Organization</p>
+                          <p className="font-bold text-zinc-850 dark:text-white mt-0.5">{selectedLog.organization || '-'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-zinc-400 italic text-center py-2">ไม่มีข้อมูลการลงทะเบียน (แพทย์ยังไม่ได้ลงทะเบียนสมาชิก)</p>
+                  )}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-end border-t border-zinc-100 pt-4 dark:border-zinc-900 mt-2">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="rounded-lg bg-zinc-100 px-4 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 transition-colors"
+              >
+                Close Details
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
