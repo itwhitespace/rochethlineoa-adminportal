@@ -17,7 +17,7 @@ export interface Member {
 }
 
 export interface LiffLog {
-  id: number;
+  id: number | string;
   user_id: string;
   display_name: string | null;
   picture_url: string | null;
@@ -25,6 +25,13 @@ export interface LiffLog {
   target: string;
   full_url: string | null;
   created_at: string;
+  even_source?: string | null;
+  even_da?: string | null;
+  campaign_name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  occupation?: string | null;
+  organization?: string | null;
 }
 
 export interface MemberAnalytics {

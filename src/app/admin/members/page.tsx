@@ -22,7 +22,9 @@ import {
   Copy,
   Check,
   Pencil,
-  Trash2
+  Trash2,
+  Download,
+  Loader2
 } from 'lucide-react';
 import { getDatabaseClient, isDatabaseConfigured } from '@/lib/database';
 import { DashboardService } from '@/lib/dashboardService';
@@ -47,6 +49,7 @@ export default function MembersPage() {
   // UI States
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [exporting, setExporting] = useState(false);
   
   // Selected user for details modal
   const [selectedUser, setSelectedUser] = useState<MemberAnalytics | null>(null);
@@ -124,6 +127,75 @@ export default function MembersPage() {
   const handleRefresh = () => {
     setRefreshing(true);
     fetchData(page, search, contentFilter, occupationFilter, specialtyFilter);
+  };
+
+  const handleExportCSV = async () => {
+    setExporting(true);
+    try {
+      // ดึงข้อมูลสมาชิกทั้งหมดที่ตรงตามเงื่อนไขฟิลเตอร์ (ไม่จำกัดเฉพาะหน้าปัจจุบัน) โดยกำหนดลิมิตไว้สูงๆ เช่น 10000 คน
+      const res = await DashboardService.getMembersList(search, contentFilter, 1, 10000, 'Confirmed', occupationFilter, specialtyFilter);
+      const dataToExport = res.items;
+
+      if (!dataToExport || dataToExport.length === 0) {
+        alert('ไม่มีข้อมูลสมาชิกสำหรับทำการส่งออก (No data to export)');
+        return;
+      }
+
+      // ส่วนหัวของคอลัมน์ (Headers)
+      const headers = [
+        'User ID',
+        'Display Name (LINE)',
+        'First Name',
+        'Last Name',
+        'Phone',
+        'Email',
+        'Occupation',
+        'Specialty',
+        'Organization',
+        'Status',
+        'Registered At',
+        'Latest Content ID',
+        'Latest Target URL',
+        'Latest Click At'
+      ];
+
+      // แปลงข้อมูลแถวในแต่ละเรคคอร์ด
+      const csvRows = [
+        headers.join(','),
+        ...dataToExport.map(item => [
+          `"${(item.user_id || '').replace(/"/g, '""')}"`,
+          `"${(item.display_name || '').replace(/"/g, '""')}"`,
+          `"${(item.first_name || '').replace(/"/g, '""')}"`,
+          `"${(item.last_name || '').replace(/"/g, '""')}"`,
+          `"${(item.phone || '').replace(/"/g, '""')}"`,
+          `"${(item.email || '').replace(/"/g, '""')}"`,
+          `"${(item.occupation || '').replace(/"/g, '""')}"`,
+          `"${(item.specialty || '').replace(/"/g, '""')}"`,
+          `"${(item.organization || '').replace(/"/g, '""')}"`,
+          `"${(item.status || '').replace(/"/g, '""')}"`,
+          `"${(item.registered_at || '').replace(/"/g, '""')}"`,
+          `"${(item.latest_content_id || '').replace(/"/g, '""')}"`,
+          `"${(item.latest_target || '').replace(/"/g, '""')}"`,
+          `"${(item.latest_click_at || '').replace(/"/g, '""')}"`
+        ].join(','))
+      ];
+
+      // ใช้ UTF-8 BOM (\uFEFF) เพื่อรองรับภาษาไทยใน Microsoft Excel
+      const csvContent = '\uFEFF' + csvRows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `roche_members_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('Failed to export CSV:', err);
+      alert('เกิดข้อผิดพลาดในการส่งออกข้อมูลสมาชิก');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleCopyId = (userId: string) => {
@@ -225,14 +297,29 @@ export default function MembersPage() {
             List of registered LINE OA members who have successfully completed registration.
           </p>
         </div>
-        <button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="flex items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-3.5 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/80"
-        >
-          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          <span>Refresh Table</span>
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleExportCSV}
+            disabled={exporting || loading}
+            className="flex items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100/70 disabled:opacity-50 dark:border-emerald-800/40 dark:bg-emerald-950/20 dark:text-emerald-400 dark:hover:bg-emerald-950/40 transition-colors"
+          >
+            {exporting ? (
+              <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
+            ) : (
+              <Download className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            )}
+            <span>Export to Excel</span>
+          </button>
+          
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-3.5 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/80 transition-colors"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <span>Refresh Table</span>
+          </button>
+        </div>
       </div>
 
       {/* Advanced Filters Toolbar */}

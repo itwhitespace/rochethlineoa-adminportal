@@ -1,5 +1,5 @@
 import { getDatabaseClient, isDatabaseConfigured } from './database';
-import { DashboardStats, TargetTraffic, ContentLeaderboard, MemberAnalytics, FlexImpression } from './types';
+import { DashboardStats, TargetTraffic, ContentLeaderboard, MemberAnalytics, FlexImpression, LiffLog } from './types';
 import { 
   getMockDashboardStats, 
   getMockTargetTraffic, 
@@ -494,5 +494,96 @@ export class DashboardService {
       console.error('Error fetching Flex Impressions from database:', error);
       return getMockFlexImpressions();
     }
+  }
+
+  // 7. Get Liff Click Logs joined with member info
+  static async getLiffLogsJoined(): Promise<LiffLog[]> {
+    let logs: any[] = [];
+    let membersList: any[] = [];
+
+    if (!isDatabaseConfigured()) {
+      logs = [...MOCK_LOGS];
+      membersList = [...MOCK_MEMBERS];
+    } else {
+      const database = getDatabaseClient();
+      if (!database) {
+        logs = [...MOCK_LOGS];
+        membersList = [...MOCK_MEMBERS];
+      } else {
+        try {
+          const { data, error } = await database
+            .from('liff_logs')
+            .select('*')
+            .order('created_at', { ascending: false });
+          if (error) throw error;
+          logs = data || [];
+
+          const { data: mData, error: mError } = await database
+            .from('members')
+            .select('user_id, display_name, picture_url, first_name, last_name, occupation, organization');
+          if (mError) throw mError;
+          membersList = mData || [];
+        } catch (error) {
+          console.error('Error fetching Liff Logs from Database:', error);
+          logs = [...MOCK_LOGS];
+          membersList = [...MOCK_MEMBERS];
+        }
+      }
+    }
+
+    const memberMap = new Map<string, any>();
+    membersList.forEach(m => memberMap.set(m.user_id, m));
+
+    return logs.map(log => {
+      const member = memberMap.get(log.user_id) || {};
+      
+      // Fallback parsing for campaign_name, even_source, even_da if not directly in fields
+      let logCampaign = log.campaign_name || '';
+      let logSource = log.even_source || log.evensource || '';
+      let logDa = log.even_da || log.evenda || '';
+
+      if (log.full_url) {
+        if (!logCampaign) {
+          try {
+            const urlObj = new URL(log.full_url);
+            logCampaign = urlObj.searchParams.get('CampaignName') || '';
+          } catch (e) {
+            const match = log.full_url.match(/[?&]CampaignName=([^&]+)/);
+            if (match) logCampaign = decodeURIComponent(match[1]);
+          }
+        }
+        if (!logSource) {
+          try {
+            const urlObj = new URL(log.full_url);
+            logSource = urlObj.searchParams.get('evensource') || '';
+          } catch (e) {
+            const match = log.full_url.match(/[?&]evensource=([^&]+)/);
+            if (match) logSource = decodeURIComponent(match[1]);
+          }
+        }
+        if (!logDa) {
+          try {
+            const urlObj = new URL(log.full_url);
+            logDa = urlObj.searchParams.get('evenDA') || '';
+          } catch (e) {
+            const match = log.full_url.match(/[?&]evenDA=([^&]+)/);
+            if (match) logDa = decodeURIComponent(match[1]);
+          }
+        }
+      }
+
+      return {
+        ...log,
+        campaign_name: logCampaign || 'Undefined Campaign',
+        even_source: logSource || 'Undefined Source',
+        even_da: logDa || 'Undefined DA',
+        display_name: member.display_name || log.display_name || 'Anonymous Member',
+        picture_url: member.picture_url || log.picture_url || null,
+        first_name: member.first_name || null,
+        last_name: member.last_name || null,
+        occupation: member.occupation || null,
+        organization: member.organization || null
+      };
+    });
   }
 }

@@ -21,7 +21,8 @@ import {
   Link2,
   Megaphone,
   FileJson,
-  Eye
+  Eye,
+  MousePointerClick
 } from 'lucide-react';
 import { isDatabaseConfigured } from '@/lib/database';
 
@@ -108,6 +109,7 @@ export default function AdminLayout({
     { name: 'Flex Message Builder', href: '/admin/flex-builder', icon: FileJson },
 
     { name: 'Impression Data', href: '/admin/impression-data', icon: Eye },
+    { name: 'LIFF Click Logs', href: '/admin/liff-logs', icon: MousePointerClick },
     { name: 'Setting', href: '/admin/settings', icon: Settings },
   ];
 
